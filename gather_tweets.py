@@ -48,7 +48,7 @@ if __name__ == '__main__':
                 browser.switch_to.window(window)
 
                 links = session.query(Link).filter(Link.twitter_username == username).all()
-                tweets = browser.find_elements(By.TAG_NAME, 'article')[:10]
+                tweets = reversed(browser.find_elements(By.TAG_NAME, 'article')[:10])
 
                 for tweet in tweets:
                     time = tweet.find_element(By.TAG_NAME, 'time').get_attribute('datetime')
