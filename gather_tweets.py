@@ -58,7 +58,7 @@ if __name__ == '__main__':
                     if 'reposted' in tweet.text:
                         type = TweetMode.RETWEET
 
-                    print(f'Found {type} from {username} at {time}')
+                    print(f'Found {type.name} from {username} at {time}')
 
                     result = session.query(Tweet).filter(
                         (Tweet.timestamp == time) & (Tweet.username == username)
