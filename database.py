@@ -25,6 +25,7 @@ class Link(MyBase):
 
     __table_args__ = (
         UniqueConstraint('twitter_username', 'discord_channel'),
+        Index('idx_links_username', 'twitter_username'),
     )
 
 
@@ -58,4 +59,6 @@ class Tasks(MyBase):
 
     __table_args__ = (
         UniqueConstraint('link_id', 'tweet_id'),
+        Index('idx_tasks_lookup', 'link_id', 'tweet_id'),
+        Index('idx_tasks_sent', 'sent'),
     )
