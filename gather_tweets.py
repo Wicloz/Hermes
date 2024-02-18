@@ -9,7 +9,7 @@ from datetime import datetime
 from selenium.webdriver.common.keys import Keys
 
 
-def get_first_window_not_in_list(browser, exclude):
+def get_first_new_window(browser, exclude):
     for window in browser.window_handles:
         if window not in exclude:
             return window
@@ -59,9 +59,7 @@ def run_after_browser_open(browser):
                         tweet.send_keys(Keys.CONTROL + Keys.RETURN)
                         sleep(1)
 
-                        browser.switch_to.window(get_first_window_not_in_list(
-                            browser, registered_windows,
-                        ))
+                        browser.switch_to.window(get_first_new_window(browser, registered_windows))
                         snowflake = int(browser.current_url.split('/')[-1])
                         browser.close()
                         browser.switch_to.window(window)
@@ -94,9 +92,7 @@ def run_after_browser_open(browser):
                     continue
 
                 browser.execute_script(f'window.open("https://twitter.com/{username}");')
-                twitter_user_windows[username] = get_first_window_not_in_list(
-                    browser, registered_windows,
-                )
+                twitter_user_windows[username] = get_first_new_window(browser, registered_windows)
                 registered_windows.add(twitter_user_windows[username])
 
         sleep(60)
