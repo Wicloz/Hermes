@@ -89,7 +89,8 @@ if __name__ == '__main__':
                         ).first() is None:
                             session.add(Tasks(link_id=link.id, tweet_id=result.id))
                             print(f'> Will be sent to "{link.discord_channel}"')
-                    session.commit()
 
-        browser.refresh()
+                    session.commit()
+                browser.refresh()
+
         sleep(60)
