@@ -18,8 +18,8 @@ def get_first_window_not_in_list(exclude):
 
 if __name__ == '__main__':
     options = Options()
-    # options.add_argument('--headless')
-    # options.add_argument('--disable-gpu')
+    options.add_argument('--headless')
+    options.add_argument('--disable-gpu')
     browser = webdriver.Firefox(options=options)
 
     browser.get('https://twitter.com/')
