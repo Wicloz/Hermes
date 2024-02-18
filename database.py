@@ -1,4 +1,4 @@
-from sqlalchemy import ForeignKey, Enum, UniqueConstraint, Index
+from sqlalchemy import ForeignKey, Enum, UniqueConstraint, Index, BigInteger
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from datetime import datetime
 from typing import List
@@ -13,7 +13,7 @@ class Link(MyBase):
     id: Mapped[int] = mapped_column(primary_key=True)
 
     twitter_username: Mapped[str] = mapped_column()
-    discord_channel: Mapped[int] = mapped_column()
+    discord_channel: Mapped[int] = mapped_column(BigInteger)
 
     tasks: Mapped[List['Tasks']] = relationship(back_populates='link')
 
@@ -28,8 +28,8 @@ class Tweet(MyBase):
 
     username: Mapped[str] = mapped_column()
     timestamp: Mapped[datetime] = mapped_column()
-    snowflake: Mapped[int] = mapped_column()
     type: Mapped[str] = mapped_column(Enum('tweet', 'retweet', name='tweet_types'))
+    snowflake: Mapped[int] = mapped_column(BigInteger)
 
     tasks: Mapped[List['Tasks']] = relationship(back_populates='tweet')
 
