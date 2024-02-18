@@ -58,6 +58,8 @@ if __name__ == '__main__':
                     if 'reposted' in tweet.text:
                         type = TweetMode.RETWEET
 
+                    print(f'Found {type} from {username} at {time}')
+
                     result = session.query(Tweet).filter(
                         (Tweet.timestamp == time) & (Tweet.username == username)
                     ).first()
@@ -76,11 +78,17 @@ if __name__ == '__main__':
                         session.add(result)
                         session.commit()
 
+                        print(f'> New snowflake "{snowflake}" registered')
+
+                    else:
+                        print(f'> Snowflake "{result.snowflake}" loaded')
+
                     for link in links:
                         if session.query(Tasks).filter(
                             (Tasks.link_id == link.id) & (Tasks.tweet_id == result.id)
                         ).first() is None:
                             session.add(Tasks(link_id=link.id, tweet_id=result.id))
+                            print(f'> Will be sent to "{link.discord_channel}"')
                     session.commit()
 
         browser.refresh()
