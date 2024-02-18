@@ -1,7 +1,7 @@
 import discord
 from discord.ext import tasks
 from sqlalchemy.orm import Session
-from database import Tasks
+from database import Tasks, TweetMode
 from settings import ENGINE, DISCORD_TOKEN
 
 
@@ -19,7 +19,10 @@ class MyClient(discord.Client):
 
             for task in tasks:
                 embed_url = f'https://fxtwitter.com/{task.link.twitter_username}/status/{task.tweet.snowflake}'
-                verb = 'RT' if task.tweet.type == 'retweet' else 'Tweeted'
+
+                verb = 'Tweeted'
+                if task.tweet.type == TweetMode.RETWEET:
+                    verb = 'Retweeted'
 
                 await self.get_channel(task.link.discord_channel).send(
                     f'{task.link.twitter_username} [{verb}]({embed_url})'

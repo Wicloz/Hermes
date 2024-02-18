@@ -4,7 +4,7 @@ from selenium.webdriver.firefox.options import Options
 from time import sleep
 from sqlalchemy.orm import Session
 from settings import ENGINE, TWITTER_TOKEN
-from database import Link, Tweet, Tasks
+from database import Link, Tweet, Tasks, TweetMode
 from datetime import datetime
 from selenium.webdriver.common.keys import Keys
 
@@ -53,7 +53,10 @@ if __name__ == '__main__':
                 for tweet in tweets:
                     time = tweet.find_element(By.TAG_NAME, 'time').get_attribute('datetime')
                     time = datetime.strptime(time, '%Y-%m-%dT%H:%M:%S.000Z')
-                    type = 'retweet' if 'reposted' in tweet.text else 'tweet'
+
+                    type = TweetMode.TWEET
+                    if 'reposted' in tweet.text:
+                        type = TweetMode.RETWEET
 
                     result = session.query(Tweet).filter(
                         (Tweet.timestamp == time) & (Tweet.username == username)

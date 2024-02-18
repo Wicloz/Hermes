@@ -2,6 +2,12 @@ from sqlalchemy import ForeignKey, Enum, UniqueConstraint, Index, BigInteger
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from datetime import datetime
 from typing import List
+import enum
+
+
+class TweetMode(enum.Enum):
+    TWEET = 'TWEET'
+    RETWEET = 'RETWEET'
 
 
 class MyBase(DeclarativeBase):
@@ -28,8 +34,8 @@ class Tweet(MyBase):
 
     username: Mapped[str] = mapped_column()
     timestamp: Mapped[datetime] = mapped_column()
-    type: Mapped[str] = mapped_column(Enum('tweet', 'retweet', name='tweet_types'))
     snowflake: Mapped[int] = mapped_column(BigInteger)
+    type: Mapped[TweetMode] = mapped_column(Enum(TweetMode))
 
     tasks: Mapped[List['Tasks']] = relationship(back_populates='tweet')
 
