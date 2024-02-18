@@ -29,7 +29,7 @@ class Tweet(MyBase):
     username: Mapped[str] = mapped_column()
     timestamp: Mapped[datetime] = mapped_column()
     snowflake: Mapped[int] = mapped_column()
-    type: Mapped[str] = mapped_column(Enum('tweet', 'retweet'))
+    type: Mapped[str] = mapped_column(Enum('tweet', 'retweet', name='tweet_types'))
 
     tasks: Mapped[List['Tasks']] = relationship(back_populates='tweet')
 
