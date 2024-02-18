@@ -1,6 +1,10 @@
 from sqlalchemy import create_engine
 from database import MyBase
 from os import getenv
+from dotenv import load_dotenv
+
+
+load_dotenv()
 
 
 ENGINE = create_engine(getenv('DATABASE_URL'))
