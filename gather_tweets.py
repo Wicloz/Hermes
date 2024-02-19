@@ -4,9 +4,10 @@ from selenium.webdriver.firefox.options import Options
 from time import sleep
 from sqlalchemy.orm import Session
 from settings import ENGINE, TWITTER_TOKEN
-from database import Link, Tweet, Tasks, TweetMode
+from database import Link, Tweet, Tasks, TweetMode, WebhookMode
 from datetime import datetime
 from selenium.webdriver.common.keys import Keys
+import requests
 
 
 def get_first_new_window(browser, exclude):
@@ -71,17 +72,35 @@ def run_after_browser_open(browser):
 
                         print(f'> New snowflake "{snowflake}" registered')
 
-                    else:
-                        print(f'> Snowflake "{result.snowflake}" loaded')
+                    embed_url = f'https://fxtwitter.com/{result.username}/status/{result.snowflake}'
+                    verb = 'Tweeted'
+                    if result.type == TweetMode.RETWEET:
+                        verb = 'Retweeted'
 
                     for link in links:
                         if session.query(Tasks).filter(
                             (Tasks.link_id == link.id) & (Tasks.tweet_id == result.id)
-                        ).first() is None:
-                            session.add(Tasks(link_id=link.id, tweet_id=result.id))
-                            print(f'> Will be sent to "{link.discord_channel}"')
+                        ).exists():
+                            continue
 
-                    session.commit()
+                        ping_prefix = ''
+                        if link.webhook_pings:
+                            ping_prefix = f'{link.webhook_pings}: '
+
+                        if link.webhook_type == WebhookMode.DISCORD:
+                            response = requests.post(link.webhook_url, json={
+                                'content': f'{ping_prefix}{result.username} [{verb}]({embed_url})',
+                            })
+
+                        if link.webhook_type == WebhookMode.ROCKETCHAT:
+                            response = requests.post(link.webhook_url, json={
+                                'text': f'{ping_prefix}{result.username} [{verb}]({embed_url})',
+                            })
+
+                        if response.ok:
+                            session.add(Tasks(link_id=link.id, tweet_id=result.id))
+                            session.commit()
+
                 browser.refresh()
 
         with Session(ENGINE) as session:
