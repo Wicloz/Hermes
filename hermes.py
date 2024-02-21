@@ -18,7 +18,7 @@ def get_first_new_window(browser, exclude):
     return None
 
 
-def run_after_browser_open(browser):
+def run_after_browser_open(browser, session):
     browser.get('https://twitter.com/')
     browser.add_cookie({
         'name': 'auth_token',
@@ -31,81 +31,79 @@ def run_after_browser_open(browser):
     browser.get('about:blank')
 
     while True:
-        with Session(ENGINE) as session:
-            for username, window in twitter_user_windows.items():
-                browser.switch_to.window(window)
+        for username, window in twitter_user_windows.items():
+            browser.switch_to.window(window)
 
-                links = session.query(Link).filter(Link.twitter_username == username).all()
+            links = session.query(Link).filter(Link.twitter_username == username).all()
 
-                if not links:
+            if not links:
+                browser.close()
+                registered_windows.remove(window)
+                twitter_user_windows.pop(username)
+                continue
+
+            browser.execute_script('window.scrollTo(0, 1000);')
+            sleep(2)
+            browser.execute_script('window.scrollTo(0, 0000);')
+            sleep(8)
+
+            for tweet in reversed(browser.find_elements(By.TAG_NAME, 'article')[:10]):
+                time = tweet.find_element(By.TAG_NAME, 'time').get_attribute('datetime')
+                time = datetime.strptime(time, '%Y-%m-%dT%H:%M:%S.000Z')
+
+                type = TweetMode.TWEET
+                if 'reposted' in tweet.text:
+                    type = TweetMode.RETWEET
+
+                print(f'Found {type.name} from {username} at {time}')
+
+                result = session.query(Tweet).filter(
+                    (Tweet.timestamp == time) & (Tweet.username == username)
+                ).first()
+
+                if result is None:
+                    tweet.send_keys(Keys.CONTROL + Keys.RETURN)
+                    sleep(1)
+
+                    browser.switch_to.window(get_first_new_window(browser, registered_windows))
+                    snowflake = int(browser.current_url.split('/')[-1])
                     browser.close()
-                    registered_windows.remove(window)
-                    twitter_user_windows.pop(username)
-                    continue
+                    browser.switch_to.window(window)
 
-                browser.execute_script('window.scrollTo(0, 1000);')
-                sleep(2)
-                browser.execute_script('window.scrollTo(0, 0000);')
-                sleep(8)
+                    result = Tweet(username=username, timestamp=time,
+                                   snowflake=snowflake, type=type)
+                    session.add(result)
+                    session.commit()
 
-                for tweet in reversed(browser.find_elements(By.TAG_NAME, 'article')[:10]):
-                    time = tweet.find_element(By.TAG_NAME, 'time').get_attribute('datetime')
-                    time = datetime.strptime(time, '%Y-%m-%dT%H:%M:%S.000Z')
+                    print(f'> New snowflake "{snowflake}" registered')
 
-                    type = TweetMode.TWEET
-                    if 'reposted' in tweet.text:
-                        type = TweetMode.RETWEET
+                for link in links:
+                    if session.query(Tasks).filter(
+                        (Tasks.link_id == link.id) & (Tasks.tweet_id == result.id)
+                    ).count():
+                        continue
 
-                    print(f'Found {type.name} from {username} at {time}')
+                    message = Template(link.template).render(tweet=result)
 
-                    result = session.query(Tweet).filter(
-                        (Tweet.timestamp == time) & (Tweet.username == username)
-                    ).first()
+                    if link.webhook_type == WebhookMode.DISCORD:
+                        response = requests.post(link.webhook_url, json={'content': message})
 
-                    if result is None:
-                        tweet.send_keys(Keys.CONTROL + Keys.RETURN)
-                        sleep(1)
+                    if link.webhook_type == WebhookMode.ROCKETCHAT:
+                        response = requests.post(link.webhook_url, json={'text': message})
 
-                        browser.switch_to.window(get_first_new_window(browser, registered_windows))
-                        snowflake = int(browser.current_url.split('/')[-1])
-                        browser.close()
-                        browser.switch_to.window(window)
-
-                        result = Tweet(username=username, timestamp=time,
-                                       snowflake=snowflake, type=type)
-                        session.add(result)
+                    if response.ok:
+                        session.add(Tasks(link_id=link.id, tweet_id=result.id))
                         session.commit()
 
-                        print(f'> New snowflake "{snowflake}" registered')
+        for username in session.query(Link.twitter_username).distinct():
+            username, = username
 
-                    for link in links:
-                        if session.query(Tasks).filter(
-                            (Tasks.link_id == link.id) & (Tasks.tweet_id == result.id)
-                        ).count():
-                            continue
+            if username in twitter_user_windows:
+                continue
 
-                        message = Template(link.template).render(tweet=result)
-
-                        if link.webhook_type == WebhookMode.DISCORD:
-                            response = requests.post(link.webhook_url, json={'content': message})
-
-                        if link.webhook_type == WebhookMode.ROCKETCHAT:
-                            response = requests.post(link.webhook_url, json={'text': message})
-
-                        if response.ok:
-                            session.add(Tasks(link_id=link.id, tweet_id=result.id))
-                            session.commit()
-
-        with Session(ENGINE) as session:
-            for username in session.query(Link.twitter_username).distinct():
-                username, = username
-
-                if username in twitter_user_windows:
-                    continue
-
-                browser.execute_script(f'window.open("https://twitter.com/{username}");')
-                twitter_user_windows[username] = get_first_new_window(browser, registered_windows)
-                registered_windows.add(twitter_user_windows[username])
+            browser.execute_script(f'window.open("https://twitter.com/{username}");')
+            twitter_user_windows[username] = get_first_new_window(browser, registered_windows)
+            registered_windows.add(twitter_user_windows[username])
 
 
 if __name__ == '__main__':
@@ -114,4 +112,5 @@ if __name__ == '__main__':
     options.add_argument('--disable-gpu')
 
     with webdriver.Firefox(options=options) as driver:
-        run_after_browser_open(driver)
+        with Session(ENGINE) as session:
+            run_after_browser_open(driver, session)
