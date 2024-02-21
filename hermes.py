@@ -42,6 +42,11 @@ def run_after_browser_open(browser):
                     twitter_user_windows.pop(username)
                     continue
 
+                browser.execute_script('window.scrollTo(0, 1000);')
+                sleep(2)
+                browser.execute_script('window.scrollTo(0, 0000);')
+                sleep(8)
+
                 for tweet in reversed(browser.find_elements(By.TAG_NAME, 'article')[:10]):
                     if not tweet.find_elements(By.TAG_NAME, 'time'):
                         continue
@@ -104,8 +109,6 @@ def run_after_browser_open(browser):
                             session.add(Tasks(link_id=link.id, tweet_id=result.id))
                             session.commit()
 
-                browser.refresh()
-
         with Session(ENGINE) as session:
             for username in session.query(Link.twitter_username).distinct():
                 username, = username
@@ -116,8 +119,6 @@ def run_after_browser_open(browser):
                 browser.execute_script(f'window.open("https://twitter.com/{username}");')
                 twitter_user_windows[username] = get_first_new_window(browser, registered_windows)
                 registered_windows.add(twitter_user_windows[username])
-
-        sleep(60)
 
 
 if __name__ == '__main__':
