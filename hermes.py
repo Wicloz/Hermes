@@ -80,7 +80,7 @@ def run_after_browser_open(browser):
                     for link in links:
                         if session.query(Tasks).filter(
                             (Tasks.link_id == link.id) & (Tasks.tweet_id == result.id)
-                        ).exists():
+                        ).count():
                             continue
 
                         ping_prefix = ''
