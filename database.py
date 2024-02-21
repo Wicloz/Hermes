@@ -1,7 +1,7 @@
 from sqlalchemy import ForeignKey, Enum, UniqueConstraint, Index, BigInteger
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from datetime import datetime
-from typing import List, Optional
+from typing import List
 import enum
 
 
@@ -26,7 +26,7 @@ class Link(MyBase):
     twitter_username: Mapped[str] = mapped_column()
     webhook_type: Mapped[WebhookMode] = mapped_column(Enum(WebhookMode))
     webhook_url: Mapped[str] = mapped_column()
-    webhook_pings: Mapped[Optional[str]] = mapped_column()
+    template: Mapped[str] = mapped_column()
 
     tasks: Mapped[List['Tasks']] = relationship(back_populates='link')
 

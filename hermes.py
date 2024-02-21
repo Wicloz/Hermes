@@ -8,6 +8,7 @@ from database import Link, Tweet, Tasks, TweetMode, WebhookMode
 from datetime import datetime
 from selenium.webdriver.common.keys import Keys
 import requests
+from jinja2 import Template
 
 
 def get_first_new_window(browser, exclude):
@@ -80,30 +81,19 @@ def run_after_browser_open(browser):
 
                         print(f'> New snowflake "{snowflake}" registered')
 
-                    embed_url = f'https://fxtwitter.com/{result.username}/status/{result.snowflake}'
-                    verb = 'Tweeted'
-                    if result.type == TweetMode.RETWEET:
-                        verb = 'Retweeted'
-
                     for link in links:
                         if session.query(Tasks).filter(
                             (Tasks.link_id == link.id) & (Tasks.tweet_id == result.id)
                         ).count():
                             continue
 
-                        ping_prefix = ''
-                        if link.webhook_pings:
-                            ping_prefix = f'{link.webhook_pings}: '
+                        message = Template(link.template).render(tweet=result)
 
                         if link.webhook_type == WebhookMode.DISCORD:
-                            response = requests.post(link.webhook_url, json={
-                                'content': f'{ping_prefix}{result.username} [{verb}]({embed_url})',
-                            })
+                            response = requests.post(link.webhook_url, json={'content': message})
 
                         if link.webhook_type == WebhookMode.ROCKETCHAT:
-                            response = requests.post(link.webhook_url, json={
-                                'text': f'{ping_prefix}{result.username} [{verb}]({embed_url})',
-                            })
+                            response = requests.post(link.webhook_url, json={'text': message})
 
                         if response.ok:
                             session.add(Tasks(link_id=link.id, tweet_id=result.id))
