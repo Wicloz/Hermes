@@ -49,9 +49,6 @@ def run_after_browser_open(browser):
                 sleep(8)
 
                 for tweet in reversed(browser.find_elements(By.TAG_NAME, 'article')[:10]):
-                    if not tweet.find_elements(By.TAG_NAME, 'time'):
-                        continue
-
                     time = tweet.find_element(By.TAG_NAME, 'time').get_attribute('datetime')
                     time = datetime.strptime(time, '%Y-%m-%dT%H:%M:%S.000Z')
 
