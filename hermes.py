@@ -4,7 +4,7 @@ from selenium.webdriver.firefox.options import Options
 from time import sleep
 from sqlalchemy.orm import Session
 from settings import ENGINE, TWITTER_TOKEN
-from database import Link, Tweet, Tasks, TweetMode, WebhookMode
+from database import Link, Tweet, Tasks, WebhookMode
 from datetime import datetime
 from selenium.webdriver.common.keys import Keys
 import requests
@@ -51,14 +51,10 @@ def run_after_browser_open(browser, session):
                 time = tweet.find_element(By.TAG_NAME, 'time').get_attribute('datetime')
                 time = datetime.strptime(time, '%Y-%m-%dT%H:%M:%S.000Z')
 
-                type = TweetMode.TWEET
-                if 'reposted' in tweet.text:
-                    type = TweetMode.RETWEET
-
-                print(f'Found {type.name} from {username} at {time}')
+                print(f'Found timeline item from {username} at {time}')
 
                 result = session.query(Tweet).filter(
-                    (Tweet.timestamp == time) & (Tweet.username == username)
+                    (Tweet.timeline_when == time) & (Tweet.timeline_user == username)
                 ).first()
 
                 if result is None:
@@ -66,16 +62,16 @@ def run_after_browser_open(browser, session):
                     sleep(1)
 
                     browser.switch_to.window(get_first_new_window(browser, registered_windows))
-                    snowflake = int(browser.current_url.split('/')[-1])
+                    _, _, _, tweet_user, _, tweet_id = browser.current_url.split('/')
                     browser.close()
                     browser.switch_to.window(window)
 
-                    result = Tweet(username=username, timestamp=time,
-                                   snowflake=snowflake, type=type)
+                    result = Tweet(timeline_user=username, timeline_when=time,
+                                   tweet_user=tweet_user, tweet_id=tweet_id)
                     session.add(result)
                     session.commit()
 
-                    print(f'> New snowflake "{snowflake}" registered')
+                    print(f'> New tweet "{tweet_id}" by "{tweet_user}" registered')
 
                 for link in links:
                     if session.query(Tasks).filter(

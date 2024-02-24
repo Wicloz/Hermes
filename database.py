@@ -5,11 +5,6 @@ from typing import List
 import enum
 
 
-class TweetMode(enum.Enum):
-    TWEET = 'TWEET'
-    RETWEET = 'RETWEET'
-
-
 class WebhookMode(enum.Enum):
     DISCORD = 'DISCORD'
     ROCKETCHAT = 'ROCKETCHAT'
@@ -40,16 +35,16 @@ class Tweet(MyBase):
     __tablename__ = 'tweets'
     id: Mapped[int] = mapped_column(primary_key=True)
 
-    username: Mapped[str] = mapped_column()
-    timestamp: Mapped[datetime] = mapped_column()
-    snowflake: Mapped[int] = mapped_column(BigInteger)
-    type: Mapped[TweetMode] = mapped_column(Enum(TweetMode))
+    timeline_user: Mapped[str] = mapped_column()
+    timeline_when: Mapped[datetime] = mapped_column()
+    tweet_user: Mapped[str] = mapped_column()
+    tweet_id: Mapped[int] = mapped_column(BigInteger)
 
     tasks: Mapped[List['Tasks']] = relationship(back_populates='tweet')
 
     __table_args__ = (
-        UniqueConstraint('username', 'timestamp'),
-        Index('idx_tweets_lookup', 'username', 'timestamp'),
+        UniqueConstraint('timeline_user', 'timeline_when'),
+        Index('idx_tweets_lookup', 'timeline_user', 'timeline_when'),
     )
 
 
