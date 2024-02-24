@@ -9,6 +9,7 @@ from datetime import datetime
 from selenium.webdriver.common.keys import Keys
 import requests
 from jinja2 import Template
+from selenium.common.exceptions import NoSuchElementException, StaleElementReferenceException
 
 
 def get_first_new_window(browser, exclude):
@@ -48,9 +49,12 @@ def run_after_browser_open(browser, session):
             sleep(8)
 
             for tweet in reversed(browser.find_elements(By.TAG_NAME, 'article')[:10]):
-                time = tweet.find_element(By.TAG_NAME, 'time').get_attribute('datetime')
-                time = datetime.strptime(time, '%Y-%m-%dT%H:%M:%S.000Z')
+                try:
+                    time = tweet.find_element(By.TAG_NAME, 'time').get_attribute('datetime')
+                except (NoSuchElementException, StaleElementReferenceException):
+                    continue
 
+                time = datetime.strptime(time, '%Y-%m-%dT%H:%M:%S.000Z')
                 print(f'Found timeline item from {username} at {time}')
 
                 result = session.query(Tweet).filter(
