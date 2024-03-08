@@ -5,9 +5,9 @@ from typing import List
 import enum
 
 
-class TweetMode(enum.Enum):
-    TWEET = 'TWEET'
-    RETWEET = 'RETWEET'
+class WebhookMode(enum.Enum):
+    DISCORD = 'DISCORD'
+    ROCKETCHAT = 'ROCKETCHAT'
 
 
 class MyBase(DeclarativeBase):
@@ -19,12 +19,14 @@ class Link(MyBase):
     id: Mapped[int] = mapped_column(primary_key=True)
 
     twitter_username: Mapped[str] = mapped_column()
-    discord_channel: Mapped[int] = mapped_column(BigInteger)
+    webhook_type: Mapped[WebhookMode] = mapped_column(Enum(WebhookMode))
+    webhook_url: Mapped[str] = mapped_column()
+    template: Mapped[str] = mapped_column()
 
     tasks: Mapped[List['Tasks']] = relationship(back_populates='link')
 
     __table_args__ = (
-        UniqueConstraint('twitter_username', 'discord_channel'),
+        UniqueConstraint('twitter_username', 'webhook_url'),
         Index('idx_links_username', 'twitter_username'),
     )
 
@@ -33,16 +35,16 @@ class Tweet(MyBase):
     __tablename__ = 'tweets'
     id: Mapped[int] = mapped_column(primary_key=True)
 
-    username: Mapped[str] = mapped_column()
-    timestamp: Mapped[datetime] = mapped_column()
-    snowflake: Mapped[int] = mapped_column(BigInteger)
-    type: Mapped[TweetMode] = mapped_column(Enum(TweetMode))
+    timeline_user: Mapped[str] = mapped_column()
+    timeline_when: Mapped[datetime] = mapped_column()
+    tweet_user: Mapped[str] = mapped_column()
+    tweet_id: Mapped[int] = mapped_column(BigInteger)
 
     tasks: Mapped[List['Tasks']] = relationship(back_populates='tweet')
 
     __table_args__ = (
-        UniqueConstraint('username', 'timestamp'),
-        Index('idx_tweets_lookup', 'username', 'timestamp'),
+        UniqueConstraint('timeline_user', 'timeline_when'),
+        Index('idx_tweets_lookup', 'timeline_user', 'timeline_when'),
     )
 
 
@@ -52,7 +54,6 @@ class Tasks(MyBase):
 
     link_id: Mapped[int] = mapped_column(ForeignKey('links.id'))
     tweet_id: Mapped[int] = mapped_column(ForeignKey('tweets.id'))
-    sent: Mapped[bool] = mapped_column(default=False)
 
     link: Mapped['Link'] = relationship(back_populates='tasks')
     tweet: Mapped['Tweet'] = relationship(back_populates='tasks')
@@ -60,5 +61,4 @@ class Tasks(MyBase):
     __table_args__ = (
         UniqueConstraint('link_id', 'tweet_id'),
         Index('idx_tasks_lookup', 'link_id', 'tweet_id'),
-        Index('idx_tasks_sent', 'sent'),
     )
