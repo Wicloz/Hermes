@@ -20,11 +20,11 @@ def get_first_new_window(browser, exclude):
 
 
 def run_after_browser_open(browser, session):
-    browser.get('https://twitter.com/')
+    browser.get('https://x.com/')
     browser.add_cookie({
         'name': 'auth_token',
         'value': TWITTER_TOKEN,
-        'domain': '.twitter.com',
+        'domain': '.x.com',
     })
 
     registered_windows = set(browser.window_handles)
@@ -101,7 +101,7 @@ def run_after_browser_open(browser, session):
             if username in twitter_user_windows:
                 continue
 
-            browser.execute_script(f'window.open("https://twitter.com/{username}");')
+            browser.execute_script(f'window.open("https://x.com/{username}");')
             twitter_user_windows[username] = get_first_new_window(browser, registered_windows)
             registered_windows.add(twitter_user_windows[username])
 
