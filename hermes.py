@@ -63,9 +63,11 @@ def run_after_browser_open(browser, session):
 
                 if result is None:
                     tweet.send_keys(Keys.CONTROL + Keys.RETURN)
-                    sleep(1)
-
                     browser.switch_to.window(get_first_new_window(browser, registered_windows))
+
+                    while browser.current_url == 'about:blank':
+                        sleep(1)
+
                     _, _, _, tweet_user, _, tweet_id = browser.current_url.split('/')
                     browser.close()
                     browser.switch_to.window(window)
