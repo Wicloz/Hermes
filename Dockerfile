@@ -1,6 +1,7 @@
 FROM python:alpine
 
 RUN apk add --no-cache firefox geckodriver
+RUN apk add --no-cache py3-psycopg
 
 COPY requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir -Ur /app/requirements.txt
