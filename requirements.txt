@@ -1,0 +1,4 @@
+selenium
+sqlalchemy
+requests
+jinja2
